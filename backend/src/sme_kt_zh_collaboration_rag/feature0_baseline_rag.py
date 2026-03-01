@@ -41,6 +41,7 @@ from collections import Counter
 from pathlib import Path
 
 from loguru import logger
+from conversational_toolkit.embeddings.openai import OpenAIEmbeddings
 
 from conversational_toolkit.agents.base import QueryWithContext
 from conversational_toolkit.agents.rag import RAG
@@ -64,7 +65,7 @@ _ROOT = Path(__file__).parents[3]  # <project-root>/
 DATA_DIR = _ROOT / "data"
 VS_PATH = _ROOT / "backend" / "data_vs.db"
 
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "text-embedding-3-small"
 RETRIEVER_TOP_K = 5
 SEED = 42
 MAX_FILES = 5
@@ -252,7 +253,7 @@ def inspect_chunks(chunks: list[Chunk], sample_size: int = 5) -> None:
 
 async def build_vector_store(
     chunks: list[Chunk],
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: SentenceTransformerEmbeddings | OpenAIEmbeddings,
     db_path: Path = VS_PATH,
     reset: bool = False,
 ) -> ChromaDBVectorStore:
@@ -291,7 +292,7 @@ async def build_vector_store(
 async def inspect_retrieval(
     query: str,
     vector_store: ChromaDBVectorStore,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: SentenceTransformerEmbeddings | OpenAIEmbeddings,
     top_k: int = RETRIEVER_TOP_K,
 ) -> list[ChunkMatch]:
     """Run semantic retrieval and print the results before the LLM sees anything.
@@ -324,7 +325,7 @@ async def inspect_retrieval(
 
 def build_agent(
     vector_store: ChromaDBVectorStore,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: SentenceTransformerEmbeddings | OpenAIEmbeddings,
     llm: LLM,
     top_k: int,
     system_prompt: str,
