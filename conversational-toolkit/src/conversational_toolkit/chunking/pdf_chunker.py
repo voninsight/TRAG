@@ -2,6 +2,7 @@ import re
 from enum import StrEnum
 
 import pymupdf4llm  # type: ignore[import-untyped]
+from docling.document_converter import DocumentConverter  # type: ignore[import-untyped]
 from markitdown import MarkItDown  # type: ignore[import-untyped]
 
 from conversational_toolkit.chunking.base import Chunk, Chunker
@@ -10,13 +11,14 @@ from conversational_toolkit.chunking.base import Chunk, Chunker
 class MarkdownConverterEngine(StrEnum):
     PYMUPDF4LLM = "pymupdf4llm"
     MARKITDOWN = "markitdown"
+    DOCLING = "docling"
 
 
 class PDFChunker(Chunker):
     def _pdf2markdown(
         self,
         file_path: str,
-        engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM,
+        engine: MarkdownConverterEngine = MarkdownConverterEngine.DOCLING,
         write_images: bool = False,
         image_path: str | None = None,
     ) -> str:
@@ -29,7 +31,9 @@ class PDFChunker(Chunker):
             return pymupdf4llm.to_markdown(file_path, **kwargs)  # type: ignore[no-any-return]
         elif engine == MarkdownConverterEngine.MARKITDOWN:
             result = MarkItDown().convert(file_path)
-            return result.text_content
+            return str(result.text_content)
+        elif engine == MarkdownConverterEngine.DOCLING:
+            return DocumentConverter().convert(file_path).document.export_to_markdown()  # type: ignore[no-any-return]
         else:
             raise NotImplementedError(f"Engine '{engine}' is not supported.")
 
@@ -41,7 +45,7 @@ class PDFChunker(Chunker):
     def make_chunks(
         self,
         file_path: str,
-        engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM,
+        engine: MarkdownConverterEngine = MarkdownConverterEngine.DOCLING,
         write_images: bool = False,
         image_path: str | None = None,
     ) -> list[Chunk]:
