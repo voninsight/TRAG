@@ -13,6 +13,8 @@ Environment variables:
     OPENAI_API_KEY: Required when BACKEND=openai
 """
 
+# TODO use docling, openai embedding model
+
 import asyncio
 import os
 import pathlib

@@ -173,7 +173,7 @@ def compare_strategies(file_path: str) -> dict[str, tuple[list[Chunk], ChunkStat
     strategies: list[tuple[str, Callable[..., list[Chunk]], dict[str, Any]]] = [
         ("header_based", header_based_chunks, {}),
         ("fixed_size_800", fixed_size_chunks, {"chunk_size": 800, "overlap": 100}),
-        ("paragraph_600", paragraph_aware_chunks, {"target_chars": 600}),
+        ("paragraph_600", paragraph_aware_chunks, {"target_chars": 500}),
     ]
     for name, fn, kwargs in strategies:
         chunks = fn(file_path, **kwargs)
