@@ -82,11 +82,12 @@ class CustomRAG(RAG):
         relevant_source_ids = json_answer.get("used_sources_id", [])
         follow_up_questions = json_answer.get("follow_up_questions", [])
         unique_sources = list({s.id: s for s in answer.sources}.values())
-
         return AgentAnswer(
             content=[MessageContent(type="text", text=content)],
             sources=[
-                source for source in unique_sources if source.id in relevant_source_ids
+                source
+                for source in unique_sources
+                if source.id in relevant_source_ids or source.mime_type == "image/png"
             ],
             follow_up_questions=follow_up_questions,
         )
