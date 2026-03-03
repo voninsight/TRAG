@@ -78,23 +78,40 @@ class RAG(Agent):
             if retrieved:
                 sources += reciprocal_rank_fusion(retrieved)[: retriever.top_k]
 
-        sources_as_message = LLMMessage(role=Roles.USER, content=[])
+        sources_list = []
 
         for source in sources:
             if "text" in source.mime_type:
+                sources_as_message = LLMMessage(role=Roles.USER, content=[])
                 sources_as_message.content.append(
                     MessageContent(
                         type="text",
                         text=f"<source id='{source.id}'>{source.content}</source>",
                     )
                 )
+                sources_list.append(sources_as_message)
+
             elif "image" in source.mime_type:
+                sources_as_message = LLMMessage(role=Roles.USER, content=[])
+                sources_as_message.content.append(
+                    MessageContent(
+                        type="text",
+                        text=f"<source id='{source.id}' type='image'>",
+                    )
+                )
                 sources_as_message.content.append(
                     MessageContent(
                         type="image",
                         image_url=source.content,
                     )
                 )
+                sources_as_message.content.append(
+                    MessageContent(
+                        type="text",
+                        text="</source>",
+                    )
+                )
+                sources_list.append(sources_as_message)
             else:
                 raise ValueError(f"Unsupported MIME type: {source.mime_type}")
 
@@ -105,7 +122,7 @@ class RAG(Agent):
                     content=[MessageContent(type="text", text=self.system_prompt)],
                 ),
                 *history,
-                sources_as_message,
+                *sources_list,
                 LLMMessage(
                     role=Roles.USER,
                     content=[MessageContent(type="text", text=query)],

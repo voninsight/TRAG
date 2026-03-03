@@ -85,9 +85,7 @@ class CustomRAG(RAG):
         return AgentAnswer(
             content=[MessageContent(type="text", text=content)],
             sources=[
-                source
-                for source in unique_sources
-                if source.id in relevant_source_ids or source.mime_type == "image/png"
+                source for source in unique_sources if source.id in relevant_source_ids
             ],
             follow_up_questions=follow_up_questions,
         )
