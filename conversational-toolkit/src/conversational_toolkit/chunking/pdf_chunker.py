@@ -5,8 +5,12 @@ import base64
 import re
 from enum import StrEnum
 
-import pymupdf4llm  # type: ignore[import-untyped]
-from docling.document_converter import DocumentConverter  # type: ignore[import-untyped]
+from docling.document_converter import DocumentConverter
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import PdfFormatOption
+from docling_core.types.doc.document import PictureItem
+from pathlib import Path
 from markitdown import MarkItDown  # type: ignore[import-untyped]
 from PIL import Image  # type: ignore[import-untyped]
 
@@ -14,7 +18,6 @@ from conversational_toolkit.chunking.base import Chunk, Chunker
 
 
 class MarkdownConverterEngine(StrEnum):
-    PYMUPDF4LLM = "pymupdf4llm"
     MARKITDOWN = "markitdown"
     DOCLING = "docling"
 
@@ -30,20 +33,34 @@ class PDFChunker(Chunker):
         write_images: bool = False,
         image_path: str | None = None,
     ) -> str:
-        if engine == MarkdownConverterEngine.PYMUPDF4LLM:
-            kwargs: dict = {}
-            if write_images:
-                kwargs["write_images"] = True
-                if image_path:
-                    kwargs["image_path"] = image_path
-            return pymupdf4llm.to_markdown(file_path, **kwargs)  # type: ignore[no-any-return]
-        elif engine == MarkdownConverterEngine.MARKITDOWN:
+        if engine == MarkdownConverterEngine.MARKITDOWN:
             if write_images:
                 raise NotImplementedError("Image extraction is not supported with MarkItDown engine.")
             result = MarkItDown().convert(file_path)
             return str(result.text_content)
         elif engine == MarkdownConverterEngine.DOCLING:
-            return DocumentConverter().convert(file_path).document.export_to_markdown()  # type: ignore[no-any-return]
+            if write_images and image_path:
+                pipeline_options = PdfPipelineOptions()
+                pipeline_options.generate_picture_images = True
+
+                doc_converter = DocumentConverter(
+                    format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)}
+                )
+                conv_result = doc_converter.convert(file_path)
+
+                # Manually save images from PictureItem elements
+                doc_filename = Path(file_path).stem
+                picture_counter = 0
+                for element, _level in conv_result.document.iterate_items():
+                    if isinstance(element, PictureItem) and element.image:
+                        picture_counter += 1
+                        image_filename = Path(image_path) / f"{doc_filename}-picture-{picture_counter}.png"
+                        with open(image_filename, "wb") as fp:
+                            element.image.pil_image.save(fp, format="PNG")
+
+                return conv_result.document.export_to_markdown()  # type: ignore[no-any-return]
+            else:
+                return DocumentConverter().convert(file_path).document.export_to_markdown()  # type: ignore[no-any-return]
         else:
             raise NotImplementedError(f"Engine '{engine}' is not supported.")
 
@@ -55,7 +72,7 @@ class PDFChunker(Chunker):
     def make_chunks(
         self,
         file_path: str,
-        engine: MarkdownConverterEngine = MarkdownConverterEngine.PYMUPDF4LLM,
+        engine: MarkdownConverterEngine = MarkdownConverterEngine.DOCLING,
         write_images: bool = True,
         image_path: str | None = "./tmp",
     ) -> list[Chunk]:
