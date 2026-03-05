@@ -197,6 +197,7 @@ class OpenAILLM(LLM):
                     if len(parsed_tool_calls) <= tool_call_chunk.index:
                         if len(parsed_tool_calls) > 0:
                             yield LLMMessage(
+                                content=[MessageContent(type="text", text="")],
                                 tool_calls=[parsed_tool_calls[-1]],
                             )
                         parsed_tool_calls.append(
@@ -219,5 +220,6 @@ class OpenAILLM(LLM):
 
         if parsed_tool_calls:
             yield LLMMessage(
+                content=[MessageContent(type="text", text="")],
                 tool_calls=[parsed_tool_calls[-1]],
             )

@@ -24,9 +24,9 @@ class BM25Retriever(Retriever[ChunkMatch]):
         corpus: The indexed document chunks.
     """
 
-    def __init__(self, vs: VectorStore, top_k: int) -> None:
+    def __init__(self, vector_store: VectorStore, top_k: int) -> None:
         super().__init__(top_k)
-        self.vs = vs
+        self.vs = vector_store
         self.corpus = ([],)
         self.tokenized = []
         self._bm25 = None

@@ -2,28 +2,6 @@
 
 A customizable frontend for conversational applications. This repository provides a base implementation that can be easily modified and extended.
 
-## Getting Started
-
-### Forking & Setting Upstream
-
-To customize this frontend while keeping the ability to pull updates from the original repository, the best approach is to **fork** it and set the upstream repository.
-
-1. **Fork the repository** via GitLab UI.
-2. **Clone your fork**:
-   ```
-   git clone https://gitlab.datascience.ch/industry/common/conversational-toolkit-frontend.git
-   cd conversational-toolkit-frontend
-   ```
-3. **Set upstream to track the original repository**:
-   ```
-   git remote add upstream https://gitlab.datascience.ch/industry/common/conversational-toolkit-frontend.git
-   ```
-4. **Pull updates from upstream** (when needed):
-   ```
-   git fetch upstream
-   git merge upstream/main
-   ```
-
 ## Installation
 
 Ensure you have [Node.js](https://nodejs.org/) and npm installed. Then, install dependencies:
@@ -90,7 +68,3 @@ If the project requires specific environment variables, add them to a `.env` fil
 # .env
 SERVER_URL=https://your-backend-url.com
 ```
-
-## Contributing
-
-If you’d like to contribute improvements, submit a merge request! For major changes, please open an issue to discuss first.
