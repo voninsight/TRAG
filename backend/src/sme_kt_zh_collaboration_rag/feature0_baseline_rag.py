@@ -275,7 +275,15 @@ async def build_vector_store(
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
 
-        embeddings = await embedding_model.get_embeddings([c.content for c in batch])
+        # embeddings = await embedding_model.get_embeddings([c.content for c in batch]) # TODO
+
+        # Text embeddings need content strings; multimodal embeddings need Chunk objects
+        if all(c.mime_type.startswith("text") for c in batch):
+            embeddings = await embedding_model.get_embeddings(
+                [c.content for c in batch]
+            )
+        else:
+            embeddings = await embedding_model.get_embeddings(batch)
 
         await vector_store.insert_chunks(chunks=batch, embedding=embeddings)
 

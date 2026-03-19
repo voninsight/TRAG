@@ -224,6 +224,26 @@ class _Qwen3VLEmbedder:
         return emb
 
 
+def _strip_data_uri(s: str) -> str:
+    """Strip the 'data:<mime>;base64,' prefix from a data URI, returning raw base64."""
+    if s.startswith("data:"):
+        _, _, payload = s.partition(",")
+        return payload
+    return s
+
+
+def _sniff_mime_type(s: str) -> str:
+    try:
+        data = base64.b64decode(_strip_data_uri(s), validate=True)
+    except Exception:
+        return "text/plain"
+    if data[:4] == b"\x89PNG":
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    return "text/plain"
+
+
 # --- Your CLIP-like facade ---
 class Qwen3VLEmbeddings(EmbeddingsModel):
     # TODO: Update Embedding main class to support images as well, so not inheriting it now.
@@ -262,7 +282,7 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
 
         decoded_images: list[Image.Image] = []
         for img_base64 in images:
-            img_data = base64.b64decode(img_base64)
+            img_data = base64.b64decode(_strip_data_uri(img_base64))
             img = Image.open(io.BytesIO(img_data)).convert("RGB")
             decoded_images.append(img)
 
@@ -270,7 +290,33 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
         emb = self.embedder.encode(items)
         return emb.detach().cpu().numpy()
 
-    async def get_embeddings(self, chunks: str | list[str] | Chunk | list[Chunk]) -> np.ndarray:  # type: ignore[override]
+    # async def get_embeddings(self, chunks: str | list[str] | Chunk | list[Chunk]) -> np.ndarray:  # type: ignore[override]
+    #     chunk_list: list[Chunk]
+    #     if isinstance(chunks, str):
+    #         chunk_list = [Chunk(content=chunks, mime_type="text/plain", title="Query")]
+    #     elif isinstance(chunks, Chunk):
+    #         chunk_list = [chunks]
+    #     elif isinstance(chunks, list) and all(isinstance(c, str) for c in chunks):
+    #         str_chunks = cast(list[str], chunks)
+    #         chunk_list = [Chunk(content=c, mime_type=_sniff_mime_type(c), title=f"Chunk {i}") for i, c in enumerate(str_chunks)]
+    #     else:
+    #         chunk_list = cast(list[Chunk], chunks)
+
+    #     items: list[dict] = []
+    #     for chunk in chunk_list:
+    #         if chunk.mime_type.startswith("text"):
+    #             items.append({"text": chunk.content})
+    #         elif chunk.mime_type.startswith("image"):
+    #             img_data = base64.b64decode(_strip_data_uri(chunk.content))
+    #             img = Image.open(io.BytesIO(img_data)).convert("RGB")
+    #             items.append({"image": img, "text": ""})
+    #         else:
+    #             raise ValueError(f"Unknown Data Type: {chunk.mime_type}")
+
+    #     emb = self.embedder.encode(items)
+    #     return emb.detach().cpu().numpy()
+
+    async def get_embeddings(self, chunks: str | Chunk | list[Chunk]) -> np.ndarray:
         if isinstance(chunks, str):
             chunks = [Chunk(content=chunks, mime_type="text/plain", title="Query")]
 
@@ -279,9 +325,7 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
 
         items: list[dict] = []
         for chunk in chunks:
-            if isinstance(chunk, str):
-                items.append({"text": chunk})
-            elif chunk.mime_type.startswith("text"):
+            if chunk.mime_type.startswith("text"):
                 items.append({"text": chunk.content})
             elif chunk.mime_type.startswith("image"):
                 # chunk.content is base64 in your current design
