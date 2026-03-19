@@ -232,9 +232,16 @@ def _strip_data_uri(s: str) -> str:
     return s
 
 
+def _b64decode(s: str) -> bytes:
+    """Decode base64, stripping data URI prefix and adding missing padding."""
+    raw = _strip_data_uri(s)
+    raw += "=" * (-len(raw) % 4)
+    return base64.b64decode(raw)
+
+
 def _sniff_mime_type(s: str) -> str:
     try:
-        data = base64.b64decode(_strip_data_uri(s), validate=True)
+        data = _b64decode(s)
     except Exception:
         return "text/plain"
     if data[:4] == b"\x89PNG":
@@ -282,7 +289,7 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
 
         decoded_images: list[Image.Image] = []
         for img_base64 in images:
-            img_data = base64.b64decode(_strip_data_uri(img_base64))
+            img_data = _b64decode(img_base64)
             img = Image.open(io.BytesIO(img_data)).convert("RGB")
             decoded_images.append(img)
 
@@ -290,47 +297,25 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
         emb = self.embedder.encode(items)
         return emb.detach().cpu().numpy()
 
-    # async def get_embeddings(self, chunks: str | list[str] | Chunk | list[Chunk]) -> np.ndarray:  # type: ignore[override]
-    #     chunk_list: list[Chunk]
-    #     if isinstance(chunks, str):
-    #         chunk_list = [Chunk(content=chunks, mime_type="text/plain", title="Query")]
-    #     elif isinstance(chunks, Chunk):
-    #         chunk_list = [chunks]
-    #     elif isinstance(chunks, list) and all(isinstance(c, str) for c in chunks):
-    #         str_chunks = cast(list[str], chunks)
-    #         chunk_list = [Chunk(content=c, mime_type=_sniff_mime_type(c), title=f"Chunk {i}") for i, c in enumerate(str_chunks)]
-    #     else:
-    #         chunk_list = cast(list[Chunk], chunks)
-
-    #     items: list[dict] = []
-    #     for chunk in chunk_list:
-    #         if chunk.mime_type.startswith("text"):
-    #             items.append({"text": chunk.content})
-    #         elif chunk.mime_type.startswith("image"):
-    #             img_data = base64.b64decode(_strip_data_uri(chunk.content))
-    #             img = Image.open(io.BytesIO(img_data)).convert("RGB")
-    #             items.append({"image": img, "text": ""})
-    #         else:
-    #             raise ValueError(f"Unknown Data Type: {chunk.mime_type}")
-
-    #     emb = self.embedder.encode(items)
-    #     return emb.detach().cpu().numpy()
-
-    async def get_embeddings(self, chunks: str | Chunk | list[Chunk]) -> np.ndarray:
+    async def get_embeddings(self, chunks: str | list[str] | Chunk | list[Chunk]) -> np.ndarray:  # type: ignore[override]
+        chunk_list: list[Chunk]
         if isinstance(chunks, str):
-            chunks = [Chunk(content=chunks, mime_type="text/plain", title="Query")]
-
-        if isinstance(chunks, Chunk):
-            chunks = [chunks]
+            chunk_list = [Chunk(content=chunks, mime_type="text/plain", title="Query")]
+        elif isinstance(chunks, Chunk):
+            chunk_list = [chunks]
+        elif isinstance(chunks, list) and all(isinstance(c, str) for c in chunks):
+            chunk_list = [
+                Chunk(content=c, mime_type=_sniff_mime_type(c), title=f"Chunk {i}") for i, c in enumerate(chunks)
+            ]  # type: ignore[arg-type]
+        else:
+            chunk_list = chunks  # type: ignore[assignment]
 
         items: list[dict] = []
-        for chunk in chunks:
+        for chunk in chunk_list:
             if chunk.mime_type.startswith("text"):
                 items.append({"text": chunk.content})
             elif chunk.mime_type.startswith("image"):
-                # chunk.content is base64 in your current design
-                img_data = base64.b64decode(chunk.content)
-                img = Image.open(io.BytesIO(img_data)).convert("RGB")
+                img = Image.open(io.BytesIO(_b64decode(chunk.content))).convert("RGB")
                 items.append({"image": img, "text": ""})
             else:
                 raise ValueError(f"Unknown Data Type: {chunk.mime_type}")

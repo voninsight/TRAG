@@ -176,7 +176,7 @@ def load_chunks(max_files: int | None = None) -> list[Chunk]:
     """Load documents from DATA_DIR and split them into chunks.
 
     Supported formats:
-        .pdf: converted to Markdown, split on headings
+        .pdf: converted to Markdown via pymupdf4llm, split on headings
         .xlsx, .xls: one chunk per sheet (Markdown table)
 
     Unsupported formats (e.g. standalone images) are logged as warnings and skipped. Images embedded inside PDFs are not extracted as text by default!
