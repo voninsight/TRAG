@@ -3,10 +3,10 @@ Feature Track 3: Retrieval Strategies
 
 Compares three retrieval approaches that go beyond single-query semantic search:
 
-    1. baseline         — single query -> top-k semantic (VectorStoreRetriever)
-    2. bm25             — keyword retrieval (BM25Okapi, no embedding)
-    3. hybrid           — semantic + BM25 fused with RRF (HybridRetriever)
-    4. metadata_filter  — semantic search restricted to a specific subset of documents
+    1. baseline          single query -> top-k semantic (VectorStoreRetriever)
+    2. bm25              keyword retrieval (BM25Okapi, no embedding)
+    3. hybrid            semantic + BM25 fused with RRF (HybridRetriever)
+    4. metadata_filter   semantic search restricted to a specific subset of documents
 
 BM25 catches exact keyword matches (product IDs, certification numbers, acronyms) that semantic search misses. Hybrid combines both signals at no extra LLM cost. Metadata filtering lets callers scope retrieval to a known document when the query is document-specific (e.g. "summarise the tesa EPD").
 """
