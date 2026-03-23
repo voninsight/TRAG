@@ -42,24 +42,24 @@ export const app = {
     },
     suggestions: [
         {
-            text: "How can I verify",
-            subtext: "supplier CSRD compliance?",
+            text: "What products does",
+            subtext: "PrimePack AG sell?",
+        },
+        {
+            text: "How do you evaluate",
+            subtext: "supplier sustainability claims?",
+        },
+        {
+            text: "What is the percentage",
+            subtext: " of glue in the redbox cardboard box?",
         },
         {
             text: "What types of",
             subtext: "sustainable pallets do you offer?",
         },
         {
-            text: "What is the percentage",
-            subtext: " of glue in the EPF cardboard box?",
-        },
-        {
             text: "Who is responsible for",
             subtext: " third party verification of ISO 14025:2006?",
-        },
-        {
-            text: "How do you evaluate",
-            subtext: "supplier sustainability claims?",
         },
     ],
 };

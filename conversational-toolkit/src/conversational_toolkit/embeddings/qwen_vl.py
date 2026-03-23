@@ -3,7 +3,7 @@
 
 import io
 import base64
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import numpy as np
 import torch
@@ -75,7 +75,7 @@ class Qwen3VLForEmbedding(Qwen3VLPreTrainedModel):
         )
 
 
-# --- Embedder wrapper (same algorithm as scripts/qwen3_vl_embedding.py) ---
+# Embedder wrapper (same algorithm as scripts/qwen3_vl_embedding.py)
 class _Qwen3VLEmbedder:
     def __init__(
         self,
@@ -251,7 +251,7 @@ def _sniff_mime_type(s: str) -> str:
     return "text/plain"
 
 
-# --- Your CLIP-like facade ---
+# CLIP-like facade
 class Qwen3VLEmbeddings(EmbeddingsModel):
     # TODO: Update Embedding main class to support images as well, so not inheriting it now.
 
@@ -305,8 +305,9 @@ class Qwen3VLEmbeddings(EmbeddingsModel):
             chunk_list = [chunks]
         elif isinstance(chunks, list) and all(isinstance(c, str) for c in chunks):
             chunk_list = [
-                Chunk(content=c, mime_type=_sniff_mime_type(c), title=f"Chunk {i}") for i, c in enumerate(chunks)
-            ]  # type: ignore[arg-type]
+                Chunk(content=c, mime_type=_sniff_mime_type(c), title=f"Chunk {i}")
+                for i, c in enumerate(cast(list[str], chunks))
+            ]
         else:
             chunk_list = chunks  # type: ignore[assignment]
 
