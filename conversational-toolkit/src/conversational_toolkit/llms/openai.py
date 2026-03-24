@@ -1,3 +1,4 @@
+import base64
 from collections.abc import AsyncGenerator
 from typing import Any, Literal, cast
 
@@ -32,11 +33,11 @@ def message_to_openai(msg: LLMMessage) -> ChatCompletionMessageParam:
         if "text" in content.type and content.text is not None:
             message["content"].append({"type": "text", "text": content.text})
         elif "image" in content.type and content.image_url is not None:
-            if not content.image_url.startswith("data:"):
-                raise NotImplementedError(
-                    "Only base64-encoded images are supported. URL images are not yet implemented."
-                )
-            if not content.image_url.startswith("data:image/png"):
+            try:
+                image_bytes = base64.b64decode(content.image_url)
+            except Exception:
+                raise ValueError("image_url must be a valid base64-encoded string.")
+            if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
                 raise NotImplementedError(
                     "Only PNG images are supported. Other formats (JPEG, WEBP, etc.) are not yet implemented."
                 )

@@ -16,7 +16,8 @@ LLM backends (BACKEND must be set explicitly, there is no default):
 
 Data & vector store:
     PDFs are read from <project-root>/data/.
-    The vector store is written to <project-root>/backend/data_vs.db.
+    The vector store is written to <project-root>/backend/db/data_vs.db by default.
+    Override the location by setting the DB_DIR environment variable.
     Set reset_vs=True (or RESET_VS=1) to rebuild the store from scratch.
     Re-embedding is skipped on subsequent runs if the store already exists.
 
@@ -63,7 +64,8 @@ from conversational_toolkit.vectorstores.chromadb import ChromaDBVectorStore
 # Paths and defaults
 _ROOT = Path(__file__).parents[3]  # <project-root>/
 DATA_DIR = _ROOT / "data"
-VS_PATH = _ROOT / "backend" / "data_vs.db"
+DB_DIR = Path(os.getenv("DB_DIR", str(_ROOT / "backend" / "db")))
+VS_PATH = DB_DIR / "data_vs.db"
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 RETRIEVER_TOP_K = 5

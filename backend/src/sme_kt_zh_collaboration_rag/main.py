@@ -50,8 +50,9 @@ _secret = pathlib.Path("/secrets/OPENAI_API_KEY")
 if "OPENAI_API_KEY" not in os.environ and _secret.exists():
     os.environ["OPENAI_API_KEY"] = _secret.read_text().strip()
 
-_DB_DIR = Path(__file__).parent / "db"
-_DB_DIR.mkdir(exist_ok=True)
+_ROOT = Path(__file__).parents[3]
+_DB_DIR = Path(os.getenv("DB_DIR", str(_ROOT / "backend" / "db")))
+_DB_DIR.mkdir(parents=True, exist_ok=True)
 
 IMAGE_VS_PATH = _DB_DIR / "vs_image"
 TEXT_VS_PATH = _DB_DIR / "vs_text"
