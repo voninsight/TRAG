@@ -362,6 +362,10 @@ export const RagConfigPanel: FunctionComponent = () => {
     const [ollamaEmbedModels, setOllamaEmbedModels] = useState<string[]>([]);
     const [ollamaEmbedLoading, setOllamaEmbedLoading] = useState(false);
 
+    // Ollama LLM model list (fetched dynamically from ollama_host)
+    const [ollamaLlmModels, setOllamaLlmModels] = useState<string[]>([]);
+    const [ollamaLlmLoading, setOllamaLlmLoading] = useState(false);
+
     // Presets (per-KB)
     const [userPresets, setUserPresets] = useState<Preset[]>([]);
     const [selectedPreset, setSelectedPreset] = useState("Standard");
@@ -484,6 +488,26 @@ export const RagConfigPanel: FunctionComponent = () => {
             setOllamaEmbedModels([]);
         }
     }, [kbConfig.embedding_backend, kbConfig.embedding_ollama_host, fetchOllamaEmbedModels]);
+
+    // Fetch Ollama LLM models when llm_backend=ollama and ollama_host is set
+    const fetchOllamaLlmModels = useCallback(async (host: string) => {
+        if (!host) { setOllamaLlmModels([]); return; }
+        setOllamaLlmLoading(true);
+        try {
+            const r = await fetch(`${API_BASE}/api/v1/rag/ollama-models?host=${encodeURIComponent(host)}`, { credentials: "include" });
+            if (r.ok) setOllamaLlmModels(await r.json());
+            else setOllamaLlmModels([]);
+        } catch { setOllamaLlmModels([]); }
+        finally { setOllamaLlmLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (session.llm_backend === "ollama") {
+            fetchOllamaLlmModels(session.ollama_host);
+        } else {
+            setOllamaLlmModels([]);
+        }
+    }, [session.llm_backend, session.ollama_host, fetchOllamaLlmModels]);
 
     useEffect(() => {
         let active = true;
@@ -946,6 +970,17 @@ export const RagConfigPanel: FunctionComponent = () => {
                                     onChange={(v) => updateLlmBackend(v as SessionConfig["llm_backend"])}
                                 />
                             </FieldRow>
+                            {session.llm_backend === "ollama" && (
+                                <FieldRow label={t("rag.fieldOllamaHost")} hint={t("rag.fieldOllamaHostHint")}>
+                                    <input
+                                        type="text"
+                                        value={session.ollama_host}
+                                        onChange={(e) => updateSession("ollama_host", e.target.value)}
+                                        placeholder="http://192.168.1.x:11434"
+                                        className="bg-muted border border-border text-foreground text-[10px] rounded px-2 py-1 focus:outline-none focus:border-blue-400 w-full font-mono"
+                                    />
+                                </FieldRow>
+                            )}
                             <FieldRow label={t("rag.fieldLlmModel")}>
                                 {session.llm_backend === "litellm" ? (
                                     litellmLoading ? (
@@ -973,6 +1008,24 @@ export const RagConfigPanel: FunctionComponent = () => {
                                         placeholder="claude-haiku-4-5-20251001"
                                         className="bg-muted border border-border text-foreground text-[10px] rounded px-2 py-1 focus:outline-none focus:border-blue-400 w-44 font-mono"
                                     />
+                                ) : session.llm_backend === "ollama" ? (
+                                    ollamaLlmLoading ? (
+                                        <span className="text-[10px] text-muted-foreground italic">Laden...</span>
+                                    ) : ollamaLlmModels.length > 0 ? (
+                                        <SelectInput
+                                            value={session.llm_model}
+                                            options={ollamaLlmModels}
+                                            onChange={(v) => updateSession("llm_model", v)}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={session.llm_model}
+                                            onChange={(e) => updateSession("llm_model", e.target.value)}
+                                            placeholder="mistral-nemo:12b"
+                                            className="bg-muted border border-border text-foreground text-[10px] rounded px-2 py-1 focus:outline-none focus:border-blue-400 w-44 font-mono"
+                                        />
+                                    )
                                 ) : (
                                     <SelectInput
                                         value={session.llm_model}
@@ -1006,17 +1059,6 @@ export const RagConfigPanel: FunctionComponent = () => {
                             <FieldRow label={t("rag.fieldTemperature")} hint={t("rag.fieldTemperatureHint")}>
                                 <NumberInput value={session.llm_temperature} min={0} max={1} step={0.05} onChange={(v) => updateSession("llm_temperature", v)} />
                             </FieldRow>
-                            {session.llm_backend === "ollama" && (
-                                <FieldRow label={t("rag.fieldOllamaHost")} hint={t("rag.fieldOllamaHostHint")}>
-                                    <input
-                                        type="text"
-                                        value={session.ollama_host}
-                                        onChange={(e) => updateSession("ollama_host", e.target.value)}
-                                        placeholder="http://192.168.1.x:11434"
-                                        className="bg-muted border border-border text-foreground text-[10px] rounded px-2 py-1 focus:outline-none focus:border-blue-400 w-full font-mono"
-                                    />
-                                </FieldRow>
-                            )}
                             <FieldRow label={t("rag.fieldUtilityModel")} hint={t("rag.fieldUtilityModelHint")}>
                                 <input
                                     type="text"
