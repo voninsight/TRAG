@@ -16,11 +16,7 @@ from typing import Any, Sequence
 
 import numpy as np
 from loguru import logger
-from conversational_toolkit.embeddings.openai import OpenAIEmbeddings
-
-from conversational_toolkit.embeddings.sentence_transformer import (
-    SentenceTransformerEmbeddings,
-)
+from conversational_toolkit.embeddings.base import EmbeddingsModel
 from conversational_toolkit.retriever.bm25_retriever import BM25Retriever
 from conversational_toolkit.retriever.hybrid_retriever import HybridRetriever
 from conversational_toolkit.retriever.vectorstore_retriever import VectorStoreRetriever
@@ -54,7 +50,7 @@ class RetrievalResult:
 
 async def retrieve_baseline(
     query: str,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: EmbeddingsModel,
     vector_store: ChromaDBVectorStore,
     top_k: int = 5,
 ) -> RetrievalResult:
@@ -77,7 +73,7 @@ async def retrieve_bm25(
 
 async def retrieve_hybrid(
     query: str,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: EmbeddingsModel,
     vector_store: ChromaDBVectorStore,
     corpus: list[ChunkRecord],
     top_k: int = 5,
@@ -93,7 +89,7 @@ async def retrieve_hybrid(
 
 async def retrieve_with_metadata_filter(
     query: str,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: EmbeddingsModel,
     vector_store: ChromaDBVectorStore,
     filters: dict[str, Any],
     top_k: int = 5,
@@ -119,7 +115,7 @@ async def retrieve_with_metadata_filter(
 
 async def compare_retrieval_strategies(
     query: str,
-    embedding_model: SentenceTransformerEmbeddings,
+    embedding_model: EmbeddingsModel,
     vector_store: ChromaDBVectorStore,
     corpus: list[ChunkRecord],
     top_k: int = 5,
@@ -173,7 +169,7 @@ def print_strategy_comparison(
 
 async def get_corpus_from_vector_store(
     vector_store: ChromaDBVectorStore,
-    embedding_model: SentenceTransformerEmbeddings | OpenAIEmbeddings,
+    embedding_model: EmbeddingsModel,
     n: int,
 ) -> list[ChunkRecord]:
     """Fetch a representative corpus from the vector store for BM25 indexing.
