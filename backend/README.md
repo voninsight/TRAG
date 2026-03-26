@@ -44,7 +44,7 @@ A one-off setup notebook that populates both ChromaDB collections from the raw c
 | Build text store | Embeds text chunks with OpenAI `text-embedding-3-small` and persists to `db/vs_text/` |
 | Build image store | Embeds image chunks with Qwen3-VL and persists to `db/vs_image/` |
 
-Run this notebook once before using any feature notebook that depends on a pre-built vector store. Both stores are written to `backend/db/` by default (override with the `DB_DIR` environment variable).
+Both stores are written to `backend/db/` by default (override with the `DB_DIR` environment variable).
 
 ---
 
