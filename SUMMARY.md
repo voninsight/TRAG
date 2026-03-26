@@ -1,6 +1,6 @@
 # RAG Assistant — Summary
 
-**Version:** 0.2.23 · **Date:** 2026-03-24
+**Version:** 0.2.25 · **Date:** 2026-03-26
 
 ---
 
@@ -78,6 +78,27 @@ Browser
 - **i18n** — DE / EN / FR / IT
 - **Generation Stats** — query duration, tokens/second, model name per response
 - **Conversation Management** — rename, delete, group by session label
+- **Session Label Pills** — reuse past session tags via pills (localStorage per device); × to remove, clear all
+- **Per-group Delete** — delete all conversations in a session-tag group or date group via hover trash icon + confirm dialog
+- **Sidebar Badges** — KB name · LLM short name · T= · emb: · k= · BM25 · Rerank · HyDE · QExp under each chat
+- **Message Footer** — LLM model · duration · tok/s (no KB/emb in footer)
+- **Indexing Stop Button** — cancel running indexing with confirm dialog; already-indexed chunks preserved
+- **Backend Status Banner** — red banner bottom-left when backend unreachable; green flash on recovery
+
+---
+
+## Active Demo Configuration (2026-03-26)
+
+| KB | Description | Chunks | Vector DB |
+|---|---|---|---|
+| `dd1-chroma-p3` ✓ **active** | Demo Data 1 · ChromaDB · Advanced | 1431 | Local ChromaDB |
+| `dd1-pgvector-p1` | Demo Data 1 · pgvector · Dense | 3993 | pgvector LAN |
+| `dd1-pgvector-p2` | Demo Data 1 · pgvector · Hybrid | 0 | pgvector LAN |
+| `dd2-chroma-p1` | Demo Data 2 (NAS) · ChromaDB · Dense | 852 | Local ChromaDB |
+| `dd2-chroma-p2` | Demo Data 2 (NAS) · ChromaDB · Hybrid | 0 | Local ChromaDB |
+| `dd2-pgvector-p3` | Demo Data 2 (NAS) · pgvector · Advanced | 0 | pgvector LAN |
+
+**Note:** `dd1-chroma-p3` is the recommended demo KB — no pgvector LAN dependency.
 
 ---
 
@@ -109,9 +130,16 @@ All extensions were developed by **Vonlanthen INSIGHT** (Patrik Vonlanthen) and 
 | Backend | Critical bug fix: stream sentinel in `controller.py` |
 | Backend | MarkItDown chunker: EPUB, DOCX, DOC support |
 | Backend | OpenAI-compatible endpoint (`/v1/chat/completions`) |
+| Backend | Indexing cancellation (`reindex-cancel` endpoint, stop button) |
 | Frontend | RAG config panel: collapsible right-side panel with presets |
+| Frontend | Activity rail + multi-panel layout (knowledge, workflows, tools, …) |
 | Frontend | Login / passcode authentication |
 | Frontend | Conversation grouping by date and session label |
+| Frontend | Session label pills (localStorage, per-device history) |
+| Frontend | Per-group conversation delete (session tag + date groups) |
+| Frontend | Sidebar badges: KB · LLM · T= · emb: · k= · BM25 · Rerank · HyDE · QExp |
+| Frontend | Message footer: LLM · duration · tok/s |
+| Frontend | Backend status banner (red/green, bottom-left) |
 | Frontend | Generation statistics (duration, tokens/s, model) |
 | Frontend | Full i18n: DE / FR / IT translations for all new UI |
 

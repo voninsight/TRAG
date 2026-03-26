@@ -1,20 +1,18 @@
 """
 Baseline RAG pipeline.
 
-Each pipeline stage is an independent function so you can run and inspect
-individual steps without executing the full pipeline. loguru logs the
-intermediate state at every stage.
+Each pipeline stage is an independent function so you can run and inspect individual steps without executing the full pipeline.
 
 Steps at a glance:
-    1  load_chunks()         — Load PDFs, split into header-based chunks
-    2  build_vector_store()  — Embed chunks and persist to ChromaDB
-    3  inspect_retrieval()   — Run semantic search and print results
-    4  build_agent()         — Assemble the RAG agent from the vector store
-    5  ask()                 — Send a query and return the answer
+    1  load_chunks(): Load PDFs, split into header-based chunks
+    2  build_vector_store(): Embed chunks and persist to ChromaDB
+    3  inspect_retrieval(): Run semantic search and print results
+    4  build_agent(): Assemble the RAG agent from the vector store
+    5  ask(): Send a query and return the answer
 
-LLM backends (BACKEND must be set explicitly — there is no default):
-    ollama — local Ollama server at http://localhost:11434
-    openai — requires OPENAI_API_KEY (env var or /secrets/OPENAI_API_KEY file)
+LLM backends (BACKEND must be set explicitly, there is no default):
+    ollama: local Ollama server at http://localhost:11434
+    openai: requires OPENAI_API_KEY (env var or /secrets/OPENAI_API_KEY file)
 
 Embedding backends (EMBEDDING_BACKEND, default: local):
     local  — SentenceTransformer, no API key needed (default)
@@ -22,7 +20,8 @@ Embedding backends (EMBEDDING_BACKEND, default: local):
 
 Data & vector store:
     PDFs are read from <project-root>/data/.
-    The vector store is written to <project-root>/backend/data_vs.db.
+    The vector store is written to <project-root>/backend/db/data_vs.db by default.
+    Override the location by setting the DB_DIR environment variable.
     Set reset_vs=True (or RESET_VS=1) to rebuild the store from scratch.
     Re-embedding is skipped on subsequent runs if the store already exists.
 
@@ -132,7 +131,8 @@ class NomicVectorStoreRetriever(VectorStoreRetriever):
 # Paths and defaults
 _ROOT = Path(__file__).parents[3]  # <project-root>/
 DATA_DIR = _ROOT / "data"
-VS_PATH = _ROOT / "backend" / "data_vs.db"
+DB_DIR = Path(os.getenv("DB_DIR", str(_ROOT / "backend" / "db")))
+VS_PATH = DB_DIR / "data_vs.db"
 
 # Local embedding model — runs fully offline via sentence-transformers.
 # nomic-embed-text produces 768-dim embeddings and handles long documents well.
@@ -326,8 +326,18 @@ def build_llm(
 def _split_chunk_by_tokens(chunk: Chunk, max_tokens: int) -> list[Chunk]:
     """Split a chunk whose content exceeds max_tokens into smaller sub-chunks.
 
+<<<<<<< HEAD
     Uses a simple character-based token estimate (4 chars ≈ 1 token).
     Splits at paragraph boundaries where possible, otherwise at word boundaries.
+=======
+    Supported formats:
+        .pdf: converted to Markdown via pymupdf4llm, split on headings
+        .xlsx, .xls: one chunk per sheet (Markdown table)
+
+    Unsupported formats (e.g. standalone images) are logged as warnings and skipped. Images embedded inside PDFs are not extracted as text by default!
+
+    Pass 'max_files' to cap the total number of files processed. Useful for quick iteration during development before scaling to all files.
+>>>>>>> upstream/main
     """
     max_chars = max_tokens * 4
     text = chunk.content
@@ -527,9 +537,14 @@ async def build_vector_store(
         if use_nomic_prefix:
             texts = [f"search_document: {c.content}" for c in batch]
         else:
+<<<<<<< HEAD
             texts = [c.content for c in batch]
 
         embeddings = await embedding_model.get_embeddings(texts)
+=======
+            # Multimodal embedding models (e.g. CLIPEmbeddings, Qwen3VLEmbeddings) accept list[Chunk] even though EmbeddingsModel.get_embeddings only declares str | list[str].
+            embeddings = await embedding_model.get_embeddings(batch)  # type: ignore[arg-type]
+>>>>>>> upstream/main
 
         await vector_store.insert_chunks(chunks=batch, embedding=embeddings)
         batch_idx = i // batch_size + 1
@@ -602,14 +617,16 @@ async def ask(
     logger.info(f"Query: {query!r}")
     response = await agent.answer(QueryWithContext(query=query, history=history or []))
 
+    answer_text = "".join(mc.text for mc in response.content if mc.text)
+
     logger.info("Answer:")
-    print(f"{response.content}")
+    print(answer_text)
     print(f"Sources ({len(response.sources)}):")
     for src in response.sources:
         source_file = src.metadata.get("source_file", "?")
         print(f"  {source_file!r}  |  {src.title!r}")
 
-    return response.content
+    return answer_text
 
 
 async def run_pipeline(
